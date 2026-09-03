@@ -22,8 +22,8 @@ public class GuiRecipePanelButton extends GuiRecipeButton {
 
     private static final int BUTTON_ID = 44251001;
 
-    public GuiRecipePanelButton(RecipeHandlerRef handlerRef) {
-        super(handlerRef, 0, 0, BUTTON_ID, "P");
+    public GuiRecipePanelButton(RecipeHandlerRef handlerRef, int x, int y) {
+        super(handlerRef, x, y, BUTTON_ID, "P");
     }
 
     @Override
@@ -65,11 +65,18 @@ public class GuiRecipePanelButton extends GuiRecipeButton {
         if (player == null) {
             return false;
         }
+        if (isBlueprint(player.inventory.getItemStack())) {
+            return true;
+        }
         for (ItemStack stack : player.inventory.mainInventory) {
-            if (stack != null && stack.getItem() == ModItems.recipeBlueprint) {
+            if (isBlueprint(stack)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isBlueprint(ItemStack stack) {
+        return stack != null && stack.getItem() == ModItems.recipeBlueprint;
     }
 }

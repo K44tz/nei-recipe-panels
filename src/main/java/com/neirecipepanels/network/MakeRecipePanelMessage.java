@@ -78,7 +78,7 @@ public class MakeRecipePanelMessage implements IMessage {
             }
 
             boolean spend = !creative || Config.consumeInCreative;
-            if (spend && !player.inventory.consumeInventoryItem(ModItems.recipeBlueprint)) {
+            if (spend && !consumeBlueprint(player)) {
                 player.addChatMessage(new ChatComponentTranslation("neirecipepanels.chat.needBlueprint"));
                 return;
             }
@@ -87,7 +87,24 @@ public class MakeRecipePanelMessage implements IMessage {
             if (!player.inventory.addItemStackToInventory(panel)) {
                 player.entityDropItem(panel, 0.5F);
             }
-            player.inventoryContainer.detectAndSendChanges();
+            // Full window resync: the recipe GUI is the open container client-side, so per-slot
+            // updates for the player inventory outside the hotbar would be dropped by the client.
+            player.sendContainerToPlayer(player.inventoryContainer);
+        }
+
+        /** Spend one blueprint from the inventory, or from the held cursor stack if that is where it is. */
+        private static boolean consumeBlueprint(EntityPlayerMP player) {
+            if (player.inventory.consumeInventoryItem(ModItems.recipeBlueprint)) {
+                return true;
+            }
+            ItemStack held = player.inventory.getItemStack();
+            if (held == null || held.getItem() != ModItems.recipeBlueprint) {
+                return false;
+            }
+            if (--held.stackSize <= 0) {
+                player.inventory.setItemStack(null);
+            }
+            return true;
         }
 
         private static void deny(EntityPlayerMP player) {
