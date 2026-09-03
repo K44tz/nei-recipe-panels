@@ -298,15 +298,14 @@ public class RecipeSnapshot {
     }
 
     /**
-     * The canonical stack for a slot. NEI rotates {@link PositionedStack#item} through the
-     * cycling permutations on a timer, so it depends on when the capture happened; the
-     * first entry of {@link PositionedStack#items} is stable across captures.
+     * The stack to freeze for a slot: the permutation NEI is currently rendering
+     * ({@link PositionedStack#item}), so the imprint keeps whatever the player had cycled to.
      */
     private static ItemStack primaryStack(PositionedStack ps) {
-        if (ps.items != null && ps.items.length > 0) {
-            return ps.items[0];
+        if (ps.item != null) {
+            return ps.item;
         }
-        return ps.item;
+        return ps.items != null && ps.items.length > 0 ? ps.items[0] : null;
     }
 
     private static List<ItemStack> permutations(PositionedStack ps) {
