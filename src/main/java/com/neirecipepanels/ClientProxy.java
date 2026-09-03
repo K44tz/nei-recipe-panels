@@ -1,6 +1,9 @@
 package com.neirecipepanels;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.IReloadableResourceManager;
+import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.client.MinecraftForgeClient;
@@ -38,6 +41,14 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(RecipePanelTile.class, new RecipePanelRenderer());
         MinecraftForgeClient.registerItemRenderer(ModItems.recipePanel, new RecipePanelItemRenderer());
         GuiContainerManager.addInputHandler(new PanelInputHandler());
+        ((IReloadableResourceManager) Minecraft.getMinecraft()
+            .getResourceManager()).registerReloadListener(new IResourceManagerReloadListener() {
+
+                @Override
+                public void onResourceManagerReload(IResourceManager manager) {
+                    PanelFboManager.INSTANCE.reload();
+                }
+            });
     }
 
     @Override

@@ -66,6 +66,15 @@ public final class PanelFboManager {
 
     private PanelFboManager() {}
 
+    /** Drop every cached render so panels rebuild against the reloaded resources (theme colours, atlas). */
+    public void reload() {
+        for (Panel panel : panels.values()) {
+            panel.dispose();
+        }
+        panels.clear();
+        lastSeen.clear();
+    }
+
     /** Called by the TESR for every panel it draws this frame. */
     public Panel visible(RecipePanelTile tile) {
         lastSeen.put(tile, frame);
@@ -178,6 +187,9 @@ public final class PanelFboManager {
                 }
                 handler = ref.handler;
                 recipeIndex = ref.recipeIndex;
+                // NEI's GuiRecipe calls this every frame; GT's handler lazily reads its themed NEI
+                // text colour here, so prime it before drawForeground draws the recipe description.
+                handler.getRecipeName();
                 frozen = RecipeSnapshot.readFromNBT(snapshot);
                 HandlerInfo info = GuiRecipeTab.getHandlerInfo(handler);
                 yShift = info != null ? info.getYShift() : 0;
@@ -329,9 +341,9 @@ public final class PanelFboManager {
             GL11.glEnable(GL11.GL_TEXTURE_2D);
             GL11.glEnable(GL11.GL_ALPHA_TEST);
             if (settings.transparent) {
-                font.drawStringWithShadow(text, x, 5, 0xFFFFFF);
+                font.drawStringWithShadow(text, x, 5, PanelColors.text("text_white", 0xFFFFFF));
             } else {
-                font.drawString(text, x, 5, 0x404040);
+                font.drawString(text, x, 5, PanelColors.text("title", 0x404040));
             }
             GL11.glColor4f(1F, 1F, 1F, 1F);
         }
