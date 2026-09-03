@@ -48,7 +48,8 @@ public class GuiRecipePanelConfig extends GuiScreen {
     }
 
     private String transparentLabel() {
-        return "Background: " + (transparent ? "Hidden" : "Shown");
+        return StatCollector.translateToLocal(
+            transparent ? "neirecipepanels.config.background.hidden" : "neirecipepanels.config.background.shown");
     }
 
     @Override
@@ -105,8 +106,18 @@ public class GuiRecipePanelConfig extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        drawCenteredString(fontRendererObj, "Recipe Panel", width / 2, height / 2 - 55, 0xFFFFFF);
-        drawString(fontRendererObj, "Name", width / 2 - 100, height / 2 - 42, 0xA0A0A0);
+        drawCenteredString(
+            fontRendererObj,
+            StatCollector.translateToLocal("neirecipepanels.config.title"),
+            width / 2,
+            height / 2 - 55,
+            0xFFFFFF);
+        drawString(
+            fontRendererObj,
+            StatCollector.translateToLocal("neirecipepanels.config.name"),
+            width / 2 - 100,
+            height / 2 - 42,
+            0xA0A0A0);
         nameField.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

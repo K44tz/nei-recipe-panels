@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -21,7 +22,7 @@ import com.neirecipepanels.block.RecipePanelTile;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-/** Carries a {@link RecipeSnapshot} in NBT. Hung on a wall it becomes a recipe panel block (later phase). */
+/** Carries a {@link RecipeSnapshot} in NBT; placed on a block face it becomes a recipe panel block. */
 public class ItemRecipePanel extends Item {
 
     public static final String TAG_SNAPSHOT = "snapshot";
@@ -112,10 +113,8 @@ public class ItemRecipePanel extends Item {
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> tooltip, boolean advanced) {
-        if (getSnapshot(stack) == null) {
-            tooltip.add(EnumChatFormatting.DARK_GRAY + "Blank - imprint it from an NEI recipe screen.");
-        } else {
-            tooltip.add(EnumChatFormatting.DARK_GRAY + "Right-click a wall to hang it.");
-        }
+        String key = getSnapshot(stack) == null ? "tooltip.neirecipepanels.panel.blank"
+            : "tooltip.neirecipepanels.panel.hang";
+        tooltip.add(EnumChatFormatting.DARK_GRAY + StatCollector.translateToLocal(key));
     }
 }

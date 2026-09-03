@@ -43,8 +43,8 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 
 /**
- * PROTOTYPE: renders each placed recipe once into an offscreen framebuffer using NEI's own
- * handler background + item drawing, so the TESR can blit a single flat quad.
+ * Renders each placed recipe into an offscreen framebuffer with NEI's own handler + item
+ * drawing, so the TESR can blit it as a single flat quad.
  */
 public final class PanelFboManager {
 
@@ -256,7 +256,6 @@ public final class PanelFboManager {
             }
             drawNamePlate(fw, settings);
 
-            // centre the recipe in the square at 1:1 - no glScalef
             GL11.glEnable(GL11.GL_TEXTURE_2D);
             GL11.glTranslatef(originX, originY + yShift, 0F);
             try {

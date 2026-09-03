@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.StatCollector;
 
 import com.neirecipepanels.ModItems;
 import com.neirecipepanels.NeiRecipePanels;
@@ -43,7 +44,9 @@ public class GuiRecipePanelButton extends GuiRecipeButton {
 
     @Override
     public List<String> handleTooltip(List<String> tooltip) {
-        tooltip.add(this.enabled ? "Imprint a recipe panel" : "Needs a Recipe Blueprint");
+        tooltip.add(
+            StatCollector.translateToLocal(
+                this.enabled ? "neirecipepanels.button.imprint" : "neirecipepanels.button.needBlueprint"));
         return tooltip;
     }
 

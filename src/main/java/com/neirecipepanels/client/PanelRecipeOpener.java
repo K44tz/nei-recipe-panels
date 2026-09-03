@@ -33,12 +33,11 @@ public final class PanelRecipeOpener {
             return;
         }
 
-        // direct form: navigates by RecipeId within the matching handler
         if (id != null && GuiCraftingRecipe.openRecipeGui("recipeId", result, id)) {
             return;
         }
 
-        // fall back: open every recipe for the result, then jump to the encoded one
+        // no direct match: open every recipe for the result, then jump to the stored one
         GuiRecipe<?> gui = GuiCraftingRecipe.createRecipeGui("item", true, result);
         if (gui == null) return;
         Minecraft.getMinecraft()

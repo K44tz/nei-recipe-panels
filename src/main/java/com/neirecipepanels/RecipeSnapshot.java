@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.IRecipeHandler;
@@ -24,7 +25,6 @@ import codechicken.nei.recipe.Recipe;
 public class RecipeSnapshot {
 
     private static final int VERSION = 2;
-    private static final int NBT_COMPOUND = 10;
     private static final int MAX_STRING = 12000;
 
     private static final String TAG_VERSION = "ver";
@@ -121,8 +121,8 @@ public class RecipeSnapshot {
             result,
             tag.getInteger(TAG_RESULT_X),
             tag.getInteger(TAG_RESULT_Y),
-            readSlots(tag.getTagList(TAG_INGREDIENTS, NBT_COMPOUND)),
-            readSlots(tag.getTagList(TAG_OTHERS, NBT_COMPOUND)));
+            readSlots(tag.getTagList(TAG_INGREDIENTS, Constants.NBT.TAG_COMPOUND)),
+            readSlots(tag.getTagList(TAG_OTHERS, Constants.NBT.TAG_COMPOUND)));
     }
 
     /**
@@ -252,7 +252,7 @@ public class RecipeSnapshot {
             ItemStack stack = c.hasKey(TAG_STACK) ? ItemStack.loadItemStackFromNBT(c.getCompoundTag(TAG_STACK)) : null;
             List<ItemStack> alts = new ArrayList<>();
             if (c.hasKey(TAG_ALTS)) {
-                NBTTagList altList = c.getTagList(TAG_ALTS, NBT_COMPOUND);
+                NBTTagList altList = c.getTagList(TAG_ALTS, Constants.NBT.TAG_COMPOUND);
                 for (int j = 0; j < altList.tagCount(); j++) {
                     ItemStack alt = ItemStack.loadItemStackFromNBT(altList.getCompoundTagAt(j));
                     if (alt != null) {

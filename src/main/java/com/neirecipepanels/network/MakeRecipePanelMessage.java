@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
 
 import com.neirecipepanels.Config;
 import com.neirecipepanels.ModItems;
@@ -73,13 +73,13 @@ public class MakeRecipePanelMessage implements IMessage {
             NBTTagCompound clean = RecipeSnapshot
                 .sanitize(raw, Config.maxIngredients, Config.maxAlternatives, Config.maxSnapshotBytes);
             if (clean == null) {
-                player.addChatMessage(new ChatComponentText("That recipe could not be imprinted."));
+                player.addChatMessage(new ChatComponentTranslation("neirecipepanels.chat.badSnapshot"));
                 return;
             }
 
             boolean spend = !creative || Config.consumeInCreative;
             if (spend && !player.inventory.consumeInventoryItem(ModItems.recipeBlueprint)) {
-                player.addChatMessage(new ChatComponentText("You need a Recipe Blueprint to do that."));
+                player.addChatMessage(new ChatComponentTranslation("neirecipepanels.chat.needBlueprint"));
                 return;
             }
 
@@ -91,7 +91,7 @@ public class MakeRecipePanelMessage implements IMessage {
         }
 
         private static void deny(EntityPlayerMP player) {
-            player.addChatMessage(new ChatComponentText("You are not allowed to imprint recipe panels here."));
+            player.addChatMessage(new ChatComponentTranslation("neirecipepanels.chat.notAllowed"));
         }
 
         private static boolean isOp(EntityPlayerMP player) {

@@ -13,7 +13,7 @@ import com.neirecipepanels.block.RecipePanelTile;
 public class RecipePanelRenderer extends TileEntitySpecialRenderer {
 
     private static final int PANEL_RGB = 0xC6C6C6;
-    /** Every panel is scaled so its longest side spans this fraction of the block face. */
+    /** Panel quad size as a fraction of the block face. */
     private static final float MAX_EXTENT = 0.92F;
 
     @Override

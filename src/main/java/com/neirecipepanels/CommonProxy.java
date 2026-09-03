@@ -34,10 +34,10 @@ public class CommonProxy {
 
     public void postInit(FMLPostInitializationEvent event) {}
 
-    /** Client-only: open the panel's recipe in NEI. No-op on the server. */
+    /** Client-side; no-op on a dedicated server. */
     public void openPanelRecipe(NBTTagCompound snapshot, boolean usage) {}
 
-    /** Client-only: open the config screen for the panel at the given position. No-op on the server. */
+    /** Client-side; no-op on a dedicated server. */
     public void openPanelConfig(int x, int y, int z) {}
 
     public void serverStarting(FMLServerStartingEvent event) {}
