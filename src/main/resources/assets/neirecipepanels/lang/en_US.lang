@@ -1,9 +1,11 @@
 item.recipeBlueprint.name=Recipe Blueprint
 item.recipePanel.name=Recipe Panel
+item.recipePanel.encoded.name=Encoded Recipe Blueprint
 
 tooltip.neirecipepanels.blueprint.1=Open a recipe in NEI Recipe Panels
 tooltip.neirecipepanels.blueprint.2=and click the Panel button to imprint it.
 tooltip.neirecipepanels.panel.blank=Blank - imprint it from an NEI recipe screen.
+tooltip.neirecipepanels.panel.recipe=Recipe: %s
 tooltip.neirecipepanels.panel.hang=Right-click a wall to hang it.
 
 neirecipepanels.button.imprint=Imprint a recipe panel

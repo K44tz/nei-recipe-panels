@@ -16,6 +16,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.neirecipepanels.ModBlocks;
 import com.neirecipepanels.ModItems;
+import com.neirecipepanels.NeiRecipePanels;
 import com.neirecipepanels.RecipeSnapshot;
 import com.neirecipepanels.block.RecipePanelTile;
 
@@ -32,7 +33,7 @@ public class ItemRecipePanel extends Item {
         setUnlocalizedName("recipePanel");
         setMaxStackSize(16);
         setCreativeTab(CreativeTabs.tabMisc);
-        setTextureName("item_frame");
+        setTextureName(NeiRecipePanels.MODID + ":recipe_blueprint");
     }
 
     public static ItemStack withSnapshot(NBTTagCompound snapshot) {
@@ -58,6 +59,12 @@ public class ItemRecipePanel extends Item {
     public static NBTTagCompound getSettings(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
         return tag != null && tag.hasKey(TAG_SETTINGS) ? tag.getCompoundTag(TAG_SETTINGS) : null;
+    }
+
+    /** The imprinted recipe's result, or null on a blank panel. */
+    public static ItemStack getResult(ItemStack stack) {
+        NBTTagCompound snapshot = getSnapshot(stack);
+        return snapshot == null ? null : RecipeSnapshot.peekResult(snapshot);
     }
 
     @Override
@@ -100,12 +107,8 @@ public class ItemRecipePanel extends Item {
 
     @Override
     public String getItemStackDisplayName(ItemStack stack) {
-        NBTTagCompound snapshot = getSnapshot(stack);
-        if (snapshot != null) {
-            String name = RecipeSnapshot.peekName(snapshot);
-            if (!name.isEmpty()) {
-                return super.getItemStackDisplayName(stack) + ": " + name;
-            }
+        if (getSnapshot(stack) != null) {
+            return StatCollector.translateToLocal("item.recipePanel.encoded.name");
         }
         return super.getItemStackDisplayName(stack);
     }
@@ -113,8 +116,18 @@ public class ItemRecipePanel extends Item {
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> tooltip, boolean advanced) {
-        String key = getSnapshot(stack) == null ? "tooltip.neirecipepanels.panel.blank"
-            : "tooltip.neirecipepanels.panel.hang";
-        tooltip.add(EnumChatFormatting.DARK_GRAY + StatCollector.translateToLocal(key));
+        if (getSnapshot(stack) == null) {
+            tooltip.add(
+                EnumChatFormatting.DARK_GRAY + StatCollector.translateToLocal("tooltip.neirecipepanels.panel.blank"));
+            return;
+        }
+        ItemStack result = getResult(stack);
+        if (result != null) {
+            tooltip.add(
+                EnumChatFormatting.GRAY + StatCollector
+                    .translateToLocalFormatted("tooltip.neirecipepanels.panel.recipe", result.getDisplayName()));
+        }
+        tooltip
+            .add(EnumChatFormatting.DARK_GRAY + StatCollector.translateToLocal("tooltip.neirecipepanels.panel.hang"));
     }
 }

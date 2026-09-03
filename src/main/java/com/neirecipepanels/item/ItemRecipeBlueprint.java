@@ -9,6 +9,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
+import com.neirecipepanels.NeiRecipePanels;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -19,7 +21,7 @@ public class ItemRecipeBlueprint extends Item {
         setUnlocalizedName("recipeBlueprint");
         setMaxStackSize(64);
         setCreativeTab(CreativeTabs.tabMisc);
-        setTextureName("paper");
+        setTextureName(NeiRecipePanels.MODID + ":recipe_blueprint");
     }
 
     @Override

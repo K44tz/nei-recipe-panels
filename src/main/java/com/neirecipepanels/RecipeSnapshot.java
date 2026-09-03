@@ -33,6 +33,7 @@ public class RecipeSnapshot {
     private static final String TAG_RESULT = "result";
     private static final String TAG_RESULT_X = "rx";
     private static final String TAG_RESULT_Y = "ry";
+    private static final String TAG_DISPLAY_RESULT = "dresult";
     private static final String TAG_INGREDIENTS = "ingredients";
     private static final String TAG_OTHERS = "others";
     private static final String TAG_PX = "x";
@@ -63,28 +64,34 @@ public class RecipeSnapshot {
     public final ItemStack result;
     public final int resultX;
     public final int resultY;
+    /** Result item for labelling / the item icon when {@link #result} has no pixel position (GT machines). */
+    public final ItemStack displayResult;
     public final List<Slot> ingredients;
     public final List<Slot> others;
 
     private RecipeSnapshot(String recipeName, String recipeIdJson, ItemStack result, int resultX, int resultY,
-        List<Slot> ingredients, List<Slot> others) {
+        ItemStack displayResult, List<Slot> ingredients, List<Slot> others) {
         this.recipeName = recipeName;
         this.recipeIdJson = recipeIdJson;
         this.result = result;
         this.resultX = resultX;
         this.resultY = resultY;
+        this.displayResult = displayResult;
         this.ingredients = ingredients;
         this.others = others;
     }
 
     public static RecipeSnapshot capture(IRecipeHandler handler, int recipeIndex) {
+        Recipe.RecipeId recipeId = recipeId(handler, recipeIndex);
         PositionedStack rawResult = handler.getResultStack(recipeIndex);
+        ItemStack result = rawResult != null ? primaryStack(rawResult) : null;
         return new RecipeSnapshot(
             orEmpty(handler.getRecipeName()),
-            captureRecipeId(handler, recipeIndex),
-            rawResult != null ? primaryStack(rawResult) : null,
+            recipeIdJson(recipeId),
+            result,
             rawResult != null ? rawResult.relx : 0,
             rawResult != null ? rawResult.rely : 0,
+            result == null ? idResult(recipeId) : null,
             captureSlots(handler.getIngredientStacks(recipeIndex)),
             captureSlots(handler.getOtherStacks(recipeIndex)));
     }
@@ -107,6 +114,9 @@ public class RecipeSnapshot {
             tag.setInteger(TAG_RESULT_X, resultX);
             tag.setInteger(TAG_RESULT_Y, resultY);
         }
+        if (displayResult != null) {
+            tag.setTag(TAG_DISPLAY_RESULT, displayResult.writeToNBT(new NBTTagCompound()));
+        }
         tag.setTag(TAG_INGREDIENTS, writeSlots(ingredients));
         tag.setTag(TAG_OTHERS, writeSlots(others));
         return tag;
@@ -115,12 +125,16 @@ public class RecipeSnapshot {
     public static RecipeSnapshot readFromNBT(NBTTagCompound tag) {
         ItemStack result = tag.hasKey(TAG_RESULT) ? ItemStack.loadItemStackFromNBT(tag.getCompoundTag(TAG_RESULT))
             : null;
+        ItemStack displayResult = tag.hasKey(TAG_DISPLAY_RESULT)
+            ? ItemStack.loadItemStackFromNBT(tag.getCompoundTag(TAG_DISPLAY_RESULT))
+            : null;
         return new RecipeSnapshot(
             tag.getString(TAG_NAME),
             tag.getString(TAG_RECIPE_ID),
             result,
             tag.getInteger(TAG_RESULT_X),
             tag.getInteger(TAG_RESULT_Y),
+            displayResult,
             readSlots(tag.getTagList(TAG_INGREDIENTS, Constants.NBT.TAG_COMPOUND)),
             readSlots(tag.getTagList(TAG_OTHERS, Constants.NBT.TAG_COMPOUND)));
     }
@@ -153,6 +167,7 @@ public class RecipeSnapshot {
             single(s.result),
             s.resultX,
             s.resultY,
+            single(s.displayResult),
             clampSlots(s.ingredients, maxAlts),
             clampSlots(s.others, maxAlts));
         return clean.writeToNBT();
@@ -189,16 +204,14 @@ public class RecipeSnapshot {
         return s != null && s.length() > MAX_STRING ? s.substring(0, MAX_STRING) : s;
     }
 
-    public static String peekName(NBTTagCompound tag) {
-        return tag.getString(TAG_NAME);
-    }
-
     public static String peekRecipeId(NBTTagCompound tag) {
         return tag.getString(TAG_RECIPE_ID);
     }
 
     public static ItemStack peekResult(NBTTagCompound tag) {
-        return tag.hasKey(TAG_RESULT) ? ItemStack.loadItemStackFromNBT(tag.getCompoundTag(TAG_RESULT)) : null;
+        NBTTagCompound stack = tag.hasKey(TAG_RESULT) ? tag.getCompoundTag(TAG_RESULT)
+            : tag.hasKey(TAG_DISPLAY_RESULT) ? tag.getCompoundTag(TAG_DISPLAY_RESULT) : null;
+        return stack != null ? ItemStack.loadItemStackFromNBT(stack) : null;
     }
 
     /** Size of the gzipped NBT, or -1 if it could not be written. */
@@ -210,14 +223,31 @@ public class RecipeSnapshot {
         }
     }
 
-    private static String captureRecipeId(IRecipeHandler handler, int recipeIndex) {
+    private static Recipe.RecipeId recipeId(IRecipeHandler handler, int recipeIndex) {
         try {
-            return Recipe.RecipeId.of(handler, recipeIndex)
-                .toJsonObject()
-                .toString();
+            return Recipe.RecipeId.of(handler, recipeIndex);
         } catch (Throwable t) {
-            // Not every handler can produce a RecipeId; re-open falls back to the result item.
+            // Not every handler can produce a RecipeId; re-open and the icon fall back to the result item.
+            return null;
+        }
+    }
+
+    private static String recipeIdJson(Recipe.RecipeId recipeId) {
+        try {
+            return recipeId != null ? recipeId.toJsonObject()
+                .toString() : "";
+        } catch (Throwable t) {
             return "";
+        }
+    }
+
+    /** Handlers with no result stack (GT machines) still carry the result on the RecipeId. */
+    private static ItemStack idResult(Recipe.RecipeId recipeId) {
+        try {
+            ItemStack result = recipeId != null ? recipeId.getResult() : null;
+            return result != null ? result.copy() : null;
+        } catch (Throwable t) {
+            return null;
         }
     }
 
