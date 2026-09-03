@@ -296,29 +296,27 @@ public final class PanelFboManager {
             }
 
             // GT's item renderers can zero the alpha channel, which would then show the world
-            // through the panel on the blit. Force alpha back to 1: over the whole panel for a
-            // solid backdrop, or just the slot rects when the backdrop is meant to stay see-through.
+            // through the panel on the blit. Restore it: re-stamp the backdrop's own (possibly
+            // rounded) shape for a solid panel, or just the slot rects when it stays see-through.
             GL11.glColorMask(false, false, false, true);
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
             GL11.glDisable(GL11.GL_ALPHA_TEST);
             GL11.glDisable(GL11.GL_BLEND);
             GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glColor4f(0F, 0F, 0F, 1F);
-            Tessellator opaque = Tessellator.instance;
-            opaque.startDrawingQuads();
             if (settings.transparent) {
+                GL11.glDisable(GL11.GL_TEXTURE_2D);
+                GL11.glColor4f(0F, 0F, 0F, 1F);
+                Tessellator opaque = Tessellator.instance;
+                opaque.startDrawingQuads();
                 for (RecipeSnapshot.Slot slot : frozen.ingredients) slotAlphaQuad(opaque, slot.relx, slot.rely);
                 for (RecipeSnapshot.Slot slot : frozen.others) slotAlphaQuad(opaque, slot.relx, slot.rely);
                 if (frozen.result != null) slotAlphaQuad(opaque, frozen.resultX, frozen.resultY);
+                opaque.draw();
             } else {
                 GL11.glLoadIdentity();
                 GL11.glTranslatef(0F, 0F, -2000F);
-                opaque.addVertex(0D, fh, 0D);
-                opaque.addVertex(fw, fh, 0D);
-                opaque.addVertex(fw, 0D, 0D);
-                opaque.addVertex(0D, 0D, 0D);
+                drawGuiBackdrop(fw, fh);
+                GL11.glDisable(GL11.GL_TEXTURE_2D);
             }
-            opaque.draw();
             GL11.glColorMask(true, true, true, true);
 
             GL11.glMatrixMode(GL11.GL_PROJECTION);
