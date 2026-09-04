@@ -48,4 +48,8 @@ dependencies {
     // Waila: compiled against so hovering a panel's rendered items reports them through Waila's
     // stack-override hook. Not published; the registration is a no-op IMC message when absent.
     devOnlyNonPublishable("com.github.GTNewHorizons:waila:1.19.30:dev")
+
+    // Spark: profiler, for runClient only - not used by any of our code. The "fat-dev" build is
+    // a self-contained, already-deobfuscated jar (bundles spark-common and its dependencies).
+    runtimeOnlyNonPublishable("GTNewHorizons:spark-forge1710:v0.0.16:1.10-SNAPSHOT-fat-dev")
 }

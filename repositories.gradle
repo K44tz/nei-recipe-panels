@@ -1,5 +1,12 @@
 // Add any additional repositories for your dependencies here.
 
 repositories {
-
+    // spark's Forge 1.7.10 build is only published as a GitHub release asset, not to any maven.
+    ivy {
+        url = 'https://github.com/GTNewHorizons/spark/releases/download'
+        patternLayout {
+            artifact '[revision]/[module]-[classifier].[ext]'
+        }
+        metadataSources { artifact() }
+    }
 }
