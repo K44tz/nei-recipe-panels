@@ -22,6 +22,7 @@ import codechicken.nei.guihook.GuiContainerManager;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 public class ClientProxy extends CommonProxy {
@@ -33,6 +34,8 @@ public class ClientProxy extends CommonProxy {
         FMLCommonHandler.instance()
             .bus()
             .register(PanelFboManager.INSTANCE);
+        FMLInterModComms
+            .sendMessage("Waila", "register", "com.neirecipepanels.client.RecipePanelWaila.callbackRegister");
     }
 
     @Override

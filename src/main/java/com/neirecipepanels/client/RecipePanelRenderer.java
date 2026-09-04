@@ -2,7 +2,9 @@ package com.neirecipepanels.client;
 
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
@@ -15,6 +17,8 @@ public class RecipePanelRenderer extends TileEntitySpecialRenderer {
     private static final int PANEL_RGB = 0xC6C6C6;
     /** Panel quad size as a fraction of the block face. */
     private static final float MAX_EXTENT = 0.92F;
+    /** How far off the block centre the panel quad sits, towards its face. */
+    private static final float REACH = 0.5F - 0.01F;
 
     @Override
     public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float partialTicks) {
@@ -29,8 +33,7 @@ public class RecipePanelRenderer extends TileEntitySpecialRenderer {
         GL11.glPushMatrix();
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_LIGHTING_BIT);
         GL11.glTranslated(x + 0.5D, y + 0.5D, z + 0.5D);
-        float reach = 0.5F - 0.01F;
-        GL11.glTranslatef(-face.offsetX * reach, -face.offsetY * reach, -face.offsetZ * reach);
+        GL11.glTranslatef(-face.offsetX * REACH, -face.offsetY * REACH, -face.offsetZ * REACH);
         orientOutward(face);
 
         GL11.glDisable(GL11.GL_LIGHTING);
@@ -92,5 +95,59 @@ public class RecipePanelRenderer extends TileEntitySpecialRenderer {
             default: // SOUTH
                 break;
         }
+    }
+
+    /**
+     * The recipe item under a look-ray hit on a panel's face, in world space. Inverts the quad
+     * transform above (translate to the face, then {@link #orientOutward}) to recover where on
+     * the rendered recipe the hit landed, then looks that pixel up in the frozen layout.
+     */
+    static ItemStack hoveredStack(RecipePanelTile tile, ForgeDirection face, Vec3 hitVec) {
+        PanelFboManager.Panel panel = PanelFboManager.INSTANCE.visible(tile);
+        if (!panel.ready()) return null;
+
+        double rx = hitVec.xCoord - (tile.xCoord + 0.5D) + face.offsetX * REACH;
+        double ry = hitVec.yCoord - (tile.yCoord + 0.5D) + face.offsetY * REACH;
+        double rz = hitVec.zCoord - (tile.zCoord + 0.5D) + face.offsetZ * REACH;
+
+        float lx;
+        float ly;
+        switch (face) {
+            case NORTH:
+                lx = (float) -rx;
+                ly = (float) ry;
+                break;
+            case WEST:
+                lx = (float) rz;
+                ly = (float) ry;
+                break;
+            case EAST:
+                lx = (float) -rz;
+                ly = (float) ry;
+                break;
+            case DOWN:
+                lx = (float) rx;
+                ly = (float) rz;
+                break;
+            case UP:
+                lx = (float) rx;
+                ly = (float) -rz;
+                break;
+            default: // SOUTH
+                lx = (float) rx;
+                ly = (float) ry;
+                break;
+        }
+
+        float half = MAX_EXTENT / 2F;
+        float u = (lx + half) / (2F * half);
+        float v = (ly + half) / (2F * half);
+        if (u < 0F || u > 1F || v < 0F || v > 1F) return null;
+
+        // ortho projection puts recipe-pixel y=0 at the top; the FBO texture's v=0 samples its
+        // bottom row, so v needs flipping back to recipe-pixel space.
+        int fx = (int) (panel.width * u);
+        int fy = (int) (panel.height * (1F - v));
+        return panel.stackAt(fx, fy);
     }
 }

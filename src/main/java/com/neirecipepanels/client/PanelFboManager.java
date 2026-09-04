@@ -172,6 +172,25 @@ public final class PanelFboManager {
             }
         }
 
+        /** The frozen recipe's item stack at a given FBO pixel, or null off any slot. For Waila lookups. */
+        ItemStack stackAt(int fx, int fy) {
+            if (frozen == null) return null;
+            for (RecipeSnapshot.Slot slot : frozen.ingredients) {
+                if (inSlot(fx, fy, slot.relx, slot.rely)) return slot.stack;
+            }
+            for (RecipeSnapshot.Slot slot : frozen.others) {
+                if (inSlot(fx, fy, slot.relx, slot.rely)) return slot.stack;
+            }
+            if (frozen.result != null && inSlot(fx, fy, frozen.resultX, frozen.resultY)) return frozen.result;
+            return null;
+        }
+
+        private boolean inSlot(int fx, int fy, int relx, int rely) {
+            int sx = originX + relx;
+            int sy = originY + yShift + rely;
+            return fx >= sx && fx < sx + 16 && fy >= sy && fy < sy + 16;
+        }
+
         private void resolve(NBTTagCompound snapshot) {
             try {
                 String json = RecipeSnapshot.peekRecipeId(snapshot);
