@@ -5,6 +5,7 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -35,6 +36,11 @@ public class RecipePanelBlock extends BlockContainer {
     @Override
     public TileEntity createNewTileEntity(World world, int meta) {
         return new RecipePanelTile();
+    }
+
+    @Override
+    public void registerBlockIcons(IIconRegister iconRegister) {
+        blockIcon = iconRegister.registerIcon(NeiRecipePanels.MODID + ":recipe_blueprint");
     }
 
     @Override
