@@ -1,5 +1,6 @@
 package com.neirecipepanels.client;
 
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.ItemStack;
@@ -37,6 +38,8 @@ public class RecipePanelRenderer extends TileEntitySpecialRenderer {
         orientOutward(face);
 
         GL11.glDisable(GL11.GL_LIGHTING);
+        // full-bright, like the GUI it mirrors - block/sky light and torch colour shouldn't tint it
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
 
         if (panel.ready()) {
             GL11.glEnable(GL11.GL_TEXTURE_2D);
