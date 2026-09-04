@@ -14,7 +14,6 @@ import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.IIcon;
@@ -43,6 +42,7 @@ import codechicken.nei.recipe.Recipe;
 import codechicken.nei.recipe.RecipeHandlerRef;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import gregtech.api.interfaces.IGT_ItemWithMaterialRenderer;
 
 /**
  * Renders each placed recipe into an offscreen framebuffer with NEI's own handler + item
@@ -514,13 +514,14 @@ public final class PanelFboManager {
         }
 
         /**
-         * True for non-block items with a custom IItemRenderer that draws an extruded (renderItemIn2D)
-         * sprite - GT gears / plates / dusts. Those garble outside the standard GUI transform, so we
-         * draw a plain flat multi-pass icon instead. Fluid containers keep their working renderer.
+         * True for GT's meta-generated items (gears, plates, dusts, ...) - their custom renderer
+         * garbles outside the standard GUI transform, so we draw a plain flat multi-pass icon
+         * instead. Scoped to GT specifically: other mods' custom item renderers (AE2 cables, GT
+         * fluid cells) render fine through the normal path and should keep their real look.
          */
         private static boolean useFlatIcon(ItemStack stack) {
             Item item = stack.getItem();
-            if (item instanceof ItemBlock || item instanceof IFluidContainerItem) {
+            if (!(item instanceof IGT_ItemWithMaterialRenderer) || item instanceof IFluidContainerItem) {
                 return false;
             }
             NBTTagCompound tag = stack.getTagCompound();
@@ -536,8 +537,6 @@ public final class PanelFboManager {
         private static void drawFlatIcon(int x, int y, ItemStack stack) {
             Item item = stack.getItem();
             Minecraft mc = Minecraft.getMinecraft();
-            mc.getTextureManager()
-                .bindTexture(TextureMap.locationItemsTexture);
             RenderItem render = GuiContainerManager.drawItems;
             render.zLevel = 0F;
             int meta = stack.getItemDamage();
@@ -550,6 +549,12 @@ public final class PanelFboManager {
             for (int pass = 0; pass < passes; pass++) {
                 IIcon icon = multi ? item.getIcon(stack, pass) : item.getIconIndex(stack);
                 if (icon == null) continue;
+                // some items (e.g. AE2 parts) source their icon from the block atlas, not the
+                // item one - getSpriteNumber says which, same as vanilla's own multi-pass draw.
+                mc.getTextureManager()
+                    .bindTexture(
+                        item.getSpriteNumber() == 0 ? TextureMap.locationBlocksTexture
+                            : TextureMap.locationItemsTexture);
                 int c = item.getColorFromItemStack(stack, pass);
                 GL11.glColor4f(((c >> 16) & 255) / 255F, ((c >> 8) & 255) / 255F, (c & 255) / 255F, 1F);
                 render.renderIcon(x, y, icon, 16, 16);
