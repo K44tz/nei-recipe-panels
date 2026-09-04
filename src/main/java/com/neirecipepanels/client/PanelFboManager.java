@@ -33,7 +33,9 @@ import com.neirecipepanels.PanelSettings;
 import com.neirecipepanels.RecipeSnapshot;
 import com.neirecipepanels.block.RecipePanelTile;
 
+import codechicken.nei.PositionedStack;
 import codechicken.nei.guihook.GuiContainerManager;
+import codechicken.nei.recipe.Badge;
 import codechicken.nei.recipe.GuiRecipeTab;
 import codechicken.nei.recipe.HandlerInfo;
 import codechicken.nei.recipe.IRecipeHandler;
@@ -289,6 +291,12 @@ public final class PanelFboManager {
                 }
                 RenderHelper.disableStandardItemLighting();
                 GL11.glColor4f(1F, 1F, 1F, 1F);
+                for (RecipeSnapshot.Slot slot : frozen.ingredients) {
+                    drawBadge(slot, true);
+                }
+                for (RecipeSnapshot.Slot slot : frozen.others) {
+                    drawBadge(slot, false);
+                }
                 handler.drawForeground(recipeIndex);
             } catch (Throwable t) {
                 NeiRecipePanels.LOG.warn("Recipe panel: handler draw failed", t);
@@ -427,6 +435,49 @@ public final class PanelFboManager {
             box[1] = Math.min(box[1], py);
             box[2] = Math.max(box[2], px + 16);
             box[3] = Math.max(box[3], py + 16);
+        }
+
+        /**
+         * NEI's per-slot corner badge ("NC", chance %). Drawn here rather than through
+         * {@link Badge#draw} because that path needs an open GuiScreen for its scale factor.
+         */
+        private static void drawBadge(RecipeSnapshot.Slot slot, boolean input) {
+            Badge badge = badgeFor(slot, input);
+            if (badge == null) {
+                return;
+            }
+            String text = badge.getText();
+            if (text == null || text.isEmpty()) {
+                return;
+            }
+            GL11.glPushMatrix();
+            GL11.glScalef(0.5F, 0.5F, 1F);
+            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GL11.glEnable(GL11.GL_ALPHA_TEST);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            Minecraft.getMinecraft().fontRenderer.drawString(text, slot.relx * 2, slot.rely * 2 + 1, badge.getColor());
+            GL11.glPopMatrix();
+            GL11.glColor4f(1F, 1F, 1F, 1F);
+        }
+
+        private static Badge badgeFor(RecipeSnapshot.Slot slot, boolean input) {
+            if (slot.stack == null) {
+                return null;
+            }
+            if (input) {
+                if (slot.notConsumed) {
+                    return Badge.notConsumed();
+                }
+                if (slot.chance == 0) {
+                    return Badge.notConsumedParallel();
+                }
+                if (slot.chance != PositionedStack.CHANCE_FULL) {
+                    return Badge.consumeChance(slot.chance / 10000F);
+                }
+            } else if (slot.chance != PositionedStack.CHANCE_FULL && slot.chance != 0) {
+                return Badge.outputChance(slot.chance / 10000F);
+            }
+            return null;
         }
 
         /** Isolate each item so a mod's custom item renderer can't leak GL matrix / colour state. */

@@ -15,6 +15,7 @@ import net.minecraftforge.common.util.Constants;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.IRecipeHandler;
 import codechicken.nei.recipe.Recipe;
+import codechicken.nei.recipe.StackInfo;
 
 /**
  * A serialisable copy of one NEI recipe: the recipe name, NEI's RecipeId (as JSON), the result
@@ -41,6 +42,7 @@ public class RecipeSnapshot {
     private static final String TAG_STACK = "s";
     private static final String TAG_ALTS = "alts";
     private static final String TAG_CHANCE = "chance";
+    private static final String TAG_NOT_CONSUMED = "nc";
 
     public static class Slot {
 
@@ -49,13 +51,16 @@ public class RecipeSnapshot {
         public final ItemStack stack;
         public final List<ItemStack> alternatives;
         public final int chance;
+        /** Input slot NEI badges as "NC": a zero-amount stack that the recipe does not consume. */
+        public final boolean notConsumed;
 
-        Slot(int relx, int rely, ItemStack stack, List<ItemStack> alternatives, int chance) {
+        Slot(int relx, int rely, ItemStack stack, List<ItemStack> alternatives, int chance, boolean notConsumed) {
             this.relx = relx;
             this.rely = rely;
             this.stack = stack;
             this.alternatives = alternatives;
             this.chance = chance;
+            this.notConsumed = notConsumed;
         }
     }
 
@@ -92,14 +97,16 @@ public class RecipeSnapshot {
             rawResult != null ? rawResult.relx : 0,
             rawResult != null ? rawResult.rely : 0,
             result == null ? idResult(recipeId) : null,
-            captureSlots(handler.getIngredientStacks(recipeIndex)),
-            captureSlots(handler.getOtherStacks(recipeIndex)));
+            captureSlots(handler.getIngredientStacks(recipeIndex), true),
+            captureSlots(handler.getOtherStacks(recipeIndex), false));
     }
 
-    private static List<Slot> captureSlots(List<PositionedStack> raw) {
+    private static List<Slot> captureSlots(List<PositionedStack> raw, boolean input) {
         List<Slot> slots = new ArrayList<>();
         for (PositionedStack ps : orEmpty(raw)) {
-            slots.add(new Slot(ps.relx, ps.rely, primaryStack(ps), permutations(ps), ps.getChance()));
+            ItemStack primary = primaryStack(ps);
+            boolean notConsumed = input && primary != null && StackInfo.getAmount(primary) == 0;
+            slots.add(new Slot(ps.relx, ps.rely, primary, permutations(ps), ps.getChance(), notConsumed));
         }
         return slots;
     }
@@ -186,7 +193,7 @@ public class RecipeSnapshot {
                     alts.add(a);
                 }
             }
-            out.add(new Slot(slot.relx, slot.rely, single(slot.stack), alts, slot.chance));
+            out.add(new Slot(slot.relx, slot.rely, single(slot.stack), alts, slot.chance, slot.notConsumed));
         }
         return out;
     }
@@ -258,6 +265,9 @@ public class RecipeSnapshot {
             c.setInteger(TAG_PX, slot.relx);
             c.setInteger(TAG_PY, slot.rely);
             c.setInteger(TAG_CHANCE, slot.chance);
+            if (slot.notConsumed) {
+                c.setBoolean(TAG_NOT_CONSUMED, true);
+            }
             if (slot.stack != null) {
                 c.setTag(TAG_STACK, slot.stack.writeToNBT(new NBTTagCompound()));
             }
@@ -292,7 +302,14 @@ public class RecipeSnapshot {
             } else if (stack != null) {
                 alts.add(stack);
             }
-            out.add(new Slot(c.getInteger(TAG_PX), c.getInteger(TAG_PY), stack, alts, c.getInteger(TAG_CHANCE)));
+            out.add(
+                new Slot(
+                    c.getInteger(TAG_PX),
+                    c.getInteger(TAG_PY),
+                    stack,
+                    alts,
+                    c.getInteger(TAG_CHANCE),
+                    c.getBoolean(TAG_NOT_CONSUMED)));
         }
         return out;
     }
