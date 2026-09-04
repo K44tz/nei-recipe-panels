@@ -4,8 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
-import com.google.gson.JsonParser;
-import com.neirecipepanels.NeiRecipePanels;
 import com.neirecipepanels.RecipeSnapshot;
 
 import codechicken.nei.recipe.GuiCraftingRecipe;
@@ -20,12 +18,10 @@ public final class PanelRecipeOpener {
 
     public static void open(NBTTagCompound snapshot, boolean usage) {
         if (snapshot == null) return;
-        Recipe.RecipeId id = recipeId(RecipeSnapshot.peekRecipeId(snapshot));
+        Recipe.RecipeId id = RecipeSnapshot.parseRecipeId(RecipeSnapshot.peekRecipeId(snapshot));
+        if (id == null) return;
 
-        ItemStack result = RecipeSnapshot.peekResult(snapshot);
-        if (result == null && id != null) {
-            result = id.getResult(); // GT machine handlers leave getResultStack null; the id has it
-        }
+        ItemStack result = id.getResult();
         if (result == null) return;
 
         if (usage) {
@@ -33,7 +29,7 @@ public final class PanelRecipeOpener {
             return;
         }
 
-        if (id != null && GuiCraftingRecipe.openRecipeGui("recipeId", result, id)) {
+        if (GuiCraftingRecipe.openRecipeGui("recipeId", result, id)) {
             return;
         }
 
@@ -42,21 +38,6 @@ public final class PanelRecipeOpener {
         if (gui == null) return;
         Minecraft.getMinecraft()
             .displayGuiScreen(gui);
-        if (id != null) {
-            gui.openTargetRecipe(id);
-        }
-    }
-
-    private static Recipe.RecipeId recipeId(String json) {
-        try {
-            if (json != null && !json.isEmpty()) {
-                return Recipe.RecipeId.of(
-                    new JsonParser().parse(json)
-                        .getAsJsonObject());
-            }
-        } catch (Throwable t) {
-            NeiRecipePanels.LOG.warn("Recipe panel: could not parse recipe id", t);
-        }
-        return null;
+        gui.openTargetRecipe(id);
     }
 }

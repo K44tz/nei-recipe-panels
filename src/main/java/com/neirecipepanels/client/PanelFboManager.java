@@ -26,10 +26,10 @@ import net.minecraftforge.fluids.IFluidContainerItem;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
-import com.google.gson.JsonParser;
 import com.neirecipepanels.NeiRecipePanels;
 import com.neirecipepanels.PanelSettings;
 import com.neirecipepanels.RecipeSnapshot;
+import com.neirecipepanels.ResolvedRecipe;
 import com.neirecipepanels.block.RecipePanelTile;
 
 import codechicken.nei.PositionedStack;
@@ -146,7 +146,7 @@ public final class PanelFboManager {
         private int yShift;
         private int originX;
         private int originY;
-        private RecipeSnapshot frozen;
+        private ResolvedRecipe frozen;
         int lastRenderFrame = Integer.MIN_VALUE;
 
         boolean isStale(NBTTagCompound snapshot, NBTTagCompound settings) {
@@ -175,10 +175,10 @@ public final class PanelFboManager {
         /** The frozen recipe's item stack at a given FBO pixel, or null off any slot. For Waila lookups. */
         ItemStack stackAt(int fx, int fy) {
             if (frozen == null) return null;
-            for (RecipeSnapshot.Slot slot : frozen.ingredients) {
+            for (ResolvedRecipe.Slot slot : frozen.ingredients) {
                 if (inSlot(fx, fy, slot.relx, slot.rely)) return slot.stack;
             }
-            for (RecipeSnapshot.Slot slot : frozen.others) {
+            for (ResolvedRecipe.Slot slot : frozen.others) {
                 if (inSlot(fx, fy, slot.relx, slot.rely)) return slot.stack;
             }
             if (frozen.result != null && inSlot(fx, fy, frozen.resultX, frozen.resultY)) return frozen.result;
@@ -194,13 +194,11 @@ public final class PanelFboManager {
         private void resolve(NBTTagCompound snapshot) {
             try {
                 String json = RecipeSnapshot.peekRecipeId(snapshot);
-                if (json == null || json.isEmpty()) {
+                Recipe.RecipeId recipeId = RecipeSnapshot.parseRecipeId(json);
+                if (recipeId == null) {
                     resolveFailed = true;
                     return;
                 }
-                Recipe.RecipeId recipeId = Recipe.RecipeId.of(
-                    new JsonParser().parse(json)
-                        .getAsJsonObject());
                 RecipeHandlerRef ref = RecipeHandlerRef.of(recipeId);
                 if (ref == null || ref.handler == null) {
                     resolveFailed = true;
@@ -208,10 +206,7 @@ public final class PanelFboManager {
                 }
                 handler = ref.handler;
                 recipeIndex = ref.recipeIndex;
-                // NEI's GuiRecipe calls this every frame; GT's handler lazily reads its themed NEI
-                // text colour here, so prime it before drawForeground draws the recipe description.
-                handler.getRecipeName();
-                frozen = RecipeSnapshot.readFromNBT(snapshot);
+                frozen = ResolvedRecipe.of(handler, recipeIndex, RecipeSnapshot.readFromNBT(snapshot), recipeId);
                 HandlerInfo info = GuiRecipeTab.getHandlerInfo(handler);
                 yShift = info != null ? info.getYShift() : 0;
 
@@ -219,8 +214,8 @@ public final class PanelFboManager {
                 // recipes draw slots / backgrounds past the HandlerInfo box.
                 int[] box = { 0, 0, info != null ? info.getWidth() : HandlerInfo.DEFAULT_WIDTH,
                     info != null ? info.getHeight() : HandlerInfo.DEFAULT_HEIGHT };
-                for (RecipeSnapshot.Slot s : frozen.ingredients) growBox(box, s.relx, s.rely);
-                for (RecipeSnapshot.Slot s : frozen.others) growBox(box, s.relx, s.rely);
+                for (ResolvedRecipe.Slot s : frozen.ingredients) growBox(box, s.relx, s.rely);
+                for (ResolvedRecipe.Slot s : frozen.others) growBox(box, s.relx, s.rely);
                 if (frozen.result != null) growBox(box, frozen.resultX, frozen.resultY);
                 int x0 = box[0];
                 int y0 = box[1];
@@ -297,12 +292,13 @@ public final class PanelFboManager {
                 GL11.glEnable(GL11.GL_ALPHA_TEST);
                 GL11.glDisable(GL11.GL_BLEND);
                 RenderHelper.enableGUIStandardItemLighting();
-                // frozen permutations: draw the stacks captured at imprint time, not NEI's live
-                // (cycling) ones. Animated icons still tick because that is atlas-level.
-                for (RecipeSnapshot.Slot slot : frozen.ingredients) {
+                // resolved once (see resolve()): whichever cycling permutation was showing at
+                // imprint time, picked from the handler's current stacks. Animated icons still
+                // tick because that is atlas-level.
+                for (ResolvedRecipe.Slot slot : frozen.ingredients) {
                     drawStack(slot.relx, slot.rely, slot.stack);
                 }
-                for (RecipeSnapshot.Slot slot : frozen.others) {
+                for (ResolvedRecipe.Slot slot : frozen.others) {
                     drawStack(slot.relx, slot.rely, slot.stack);
                 }
                 if (frozen.result != null) {
@@ -310,10 +306,10 @@ public final class PanelFboManager {
                 }
                 RenderHelper.disableStandardItemLighting();
                 GL11.glColor4f(1F, 1F, 1F, 1F);
-                for (RecipeSnapshot.Slot slot : frozen.ingredients) {
+                for (ResolvedRecipe.Slot slot : frozen.ingredients) {
                     drawBadge(slot, true);
                 }
-                for (RecipeSnapshot.Slot slot : frozen.others) {
+                for (ResolvedRecipe.Slot slot : frozen.others) {
                     drawBadge(slot, false);
                 }
                 handler.drawForeground(recipeIndex);
@@ -334,8 +330,8 @@ public final class PanelFboManager {
                 GL11.glColor4f(0F, 0F, 0F, 1F);
                 Tessellator opaque = Tessellator.instance;
                 opaque.startDrawingQuads();
-                for (RecipeSnapshot.Slot slot : frozen.ingredients) slotAlphaQuad(opaque, slot.relx, slot.rely);
-                for (RecipeSnapshot.Slot slot : frozen.others) slotAlphaQuad(opaque, slot.relx, slot.rely);
+                for (ResolvedRecipe.Slot slot : frozen.ingredients) slotAlphaQuad(opaque, slot.relx, slot.rely);
+                for (ResolvedRecipe.Slot slot : frozen.others) slotAlphaQuad(opaque, slot.relx, slot.rely);
                 if (frozen.result != null) slotAlphaQuad(opaque, frozen.resultX, frozen.resultY);
                 opaque.draw();
             } else {
@@ -460,7 +456,7 @@ public final class PanelFboManager {
          * NEI's per-slot corner badge ("NC", chance %). Drawn here rather than through
          * {@link Badge#draw} because that path needs an open GuiScreen for its scale factor.
          */
-        private static void drawBadge(RecipeSnapshot.Slot slot, boolean input) {
+        private static void drawBadge(ResolvedRecipe.Slot slot, boolean input) {
             Badge badge = badgeFor(slot, input);
             if (badge == null) {
                 return;
@@ -479,7 +475,7 @@ public final class PanelFboManager {
             GL11.glColor4f(1F, 1F, 1F, 1F);
         }
 
-        private static Badge badgeFor(RecipeSnapshot.Slot slot, boolean input) {
+        private static Badge badgeFor(ResolvedRecipe.Slot slot, boolean input) {
             if (slot.stack == null) {
                 return null;
             }

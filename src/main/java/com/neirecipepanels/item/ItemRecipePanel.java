@@ -64,7 +64,7 @@ public class ItemRecipePanel extends Item {
     /** The imprinted recipe's result, or null on a blank panel. */
     public static ItemStack getResult(ItemStack stack) {
         NBTTagCompound snapshot = getSnapshot(stack);
-        return snapshot == null ? null : RecipeSnapshot.peekResult(snapshot);
+        return snapshot == null ? null : RecipeSnapshot.resolveDisplayResult(snapshot);
     }
 
     @Override

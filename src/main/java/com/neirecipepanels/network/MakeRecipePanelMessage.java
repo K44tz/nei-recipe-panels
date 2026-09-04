@@ -70,8 +70,7 @@ public class MakeRecipePanelMessage implements IMessage {
                 return;
             }
 
-            NBTTagCompound clean = RecipeSnapshot
-                .sanitize(raw, Config.maxIngredients, Config.maxAlternatives, Config.maxSnapshotBytes);
+            NBTTagCompound clean = RecipeSnapshot.sanitize(raw, Config.maxIngredients, Config.maxSnapshotBytes);
             if (clean == null) {
                 player.addChatMessage(new ChatComponentTranslation("neirecipepanels.chat.badSnapshot"));
                 return;

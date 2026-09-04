@@ -19,7 +19,6 @@ public class Config {
     public static PanelMode panelMode = PanelMode.EVERYONE;
     public static boolean consumeInCreative = false;
     public static int maxIngredients = 64;
-    public static int maxAlternatives = 12;
     public static int maxSnapshotBytes = 16384;
 
     public static void synchronizeConfiguration(File configFile) {
@@ -51,8 +50,6 @@ public class Config {
             1,
             256,
             "Reject an imprint whose recipe has more ingredient / byproduct slots than this.");
-        maxAlternatives = configuration
-            .getInt("maxAlternatives", "server", 12, 1, 64, "Cap the cycling alternatives stored per slot.");
         maxSnapshotBytes = configuration.getInt(
             "maxSnapshotBytes",
             "server",
