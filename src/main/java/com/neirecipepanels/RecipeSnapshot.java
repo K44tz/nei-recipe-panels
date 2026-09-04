@@ -66,20 +66,14 @@ public class RecipeSnapshot {
         return out;
     }
 
-    /**
-     * Which of a slot's cycling alternatives was showing, matched by reference into
-     * {@link PositionedStack#items} (NEI mutates {@code item} to point at one of them in place).
-     */
+    /** Which of a slot's cycling alternatives was showing. */
     private static int permutationIndex(PositionedStack ps) {
-        if (ps == null || ps.item == null || ps.items == null) {
+        if (ps == null || ps.item == null) {
             return 0;
         }
-        for (int i = 0; i < ps.items.length; i++) {
-            if (ps.items[i] == ps.item) {
-                return i;
-            }
-        }
-        return 0;
+        // item is a copy of items[index], not the same reference - NEI's own lookup compares by type.
+        int index = ps.getPermutationIndex(ps.item);
+        return index >= 0 ? index : 0;
     }
 
     public NBTTagCompound writeToNBT() {
